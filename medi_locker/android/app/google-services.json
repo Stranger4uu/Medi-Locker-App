@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "555568965328",
+    "project_id": "medi-locker-4bb57",
+    "storage_bucket": "medi-locker-4bb57.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:555568965328:android:f82807c96c8482c175a0d5",
+        "android_client_info": {
+          "package_name": "com.example.medi_locker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDrAMC-iyaXevViGC7qXc9bSaa_g3aFOBA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
