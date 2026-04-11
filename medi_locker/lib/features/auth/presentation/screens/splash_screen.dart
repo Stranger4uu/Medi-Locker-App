@@ -1,156 +1,116 @@
+import 'dart:async';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import '../constants/app_colors.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/router/app_router.dart';
 
-class MainShell extends StatelessWidget {
-  final Widget child;
-  const MainShell({super.key, required this.child});
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
 
-  int _currentIndex(BuildContext context) {
-    final location = GoRouterState.of(context).matchedLocation;
-    if (location.startsWith('/cura')) return 1;
-    if (location.startsWith('/profile')) return 2;
-    return 0;
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  Timer? _navigationTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _navigationTimer = Timer(const Duration(seconds: 2), _navigateNext);
+  }
+
+  Future<void> _navigateNext() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (!mounted) {
+      return;
+    }
+
+    if (!hasSeenOnboarding) {
+      context.go(AppRoutes.onboarding);
+      return;
+    }
+
+    if (user == null) {
+      context.go(AppRoutes.login);
+      return;
+    }
+
+    context.go('/home');
+  }
+
+  @override
+  void dispose() {
+    _navigationTimer?.cancel();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final idx = _currentIndex(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
-      body: child,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
-          border: Border(
-            top: BorderSide(
-              color: isDark ? AppColors.borderDark : AppColors.borderLight,
-              width: 0.8,
-            ),
-          ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: AppColors.splashGradient,
         ),
         child: SafeArea(
-          child: SizedBox(
-            height: 64,
-            child: Row(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _NavItem(
-                  icon: Icons.home_outlined,
-                  activeIcon: Icons.home,
-                  label: 'Home',
-                  isActive: idx == 0,
-                  onTap: () => context.go('/home'),
+                Container(
+                  width: 110,
+                  height: 110,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.18),
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.health_and_safety,
+                    size: 56,
+                    color: Colors.white,
+                  ),
                 ),
-                _NavItem(
-                  icon: Icons.smart_toy_outlined,
-                  activeIcon: Icons.smart_toy,
-                  label: 'Cura',
-                  isActive: idx == 1,
-                  onTap: () => context.go('/cura'),
-                  isHighlighted: true,
+                const SizedBox(height: 24),
+                const Text(
+                  'Medi Locker',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.2,
+                  ),
                 ),
-                _NavItem(
-                  icon: Icons.person_outline,
-                  activeIcon: Icons.person,
-                  label: 'Profile',
-                  isActive: idx == 2,
-                  onTap: () => context.go('/profile'),
+                const SizedBox(height: 10),
+                Text(
+                  'Your secure health vault with an AI guide',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 36),
+                const SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.4,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
                 ),
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final IconData activeIcon;
-  final String label;
-  final bool isActive;
-  final bool isHighlighted;
-  final VoidCallback onTap;
-
-  const _NavItem({
-    required this.icon,
-    required this.activeIcon,
-    required this.label,
-    required this.isActive,
-    required this.onTap,
-    this.isHighlighted = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final activeColor = isDark ? AppColors.primaryLight : AppColors.primary;
-    final inactiveColor = isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
-
-    // Cura button — pill highlight style
-    if (isHighlighted) {
-      return Expanded(
-        child: GestureDetector(
-          onTap: onTap,
-          behavior: HitTestBehavior.opaque,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-                decoration: BoxDecoration(
-                  color: isActive
-                      ? (isDark ? AppColors.primaryDark : AppColors.primaryContainer)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Icon(
-                  isActive ? activeIcon : icon,
-                  color: isActive ? activeColor : inactiveColor,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-                  color: isActive ? activeColor : inactiveColor,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        behavior: HitTestBehavior.opaque,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              isActive ? activeIcon : icon,
-              color: isActive ? activeColor : inactiveColor,
-              size: 24,
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-                color: isActive ? activeColor : inactiveColor,
-              ),
-            ),
-          ],
         ),
       ),
     );

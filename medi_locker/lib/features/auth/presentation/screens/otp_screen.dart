@@ -221,7 +221,7 @@ class _OtpScreenState extends State<OtpScreen> {
             Pinput(
               controller: _otpController,
               length: 6,
-              defaultTheme: defaultPinTheme,
+              defaultPinTheme: defaultPinTheme,
               focusedPinTheme: focusedPinTheme,
               submittedPinTheme: submittedPinTheme,
               showCursor: true,

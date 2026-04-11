@@ -19,7 +19,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
   bool _isLoading = false;
   String _selectedCountryCode = '+91';
 
-  final List<Map<String, String>> _countryCodes = [
+  final List<Map<String, String>> _countryCodes = const [
     {'code': '+91', 'flag': '🇮🇳', 'name': 'India'},
     {'code': '+1', 'flag': '🇺🇸', 'name': 'USA'},
     {'code': '+44', 'flag': '🇬🇧', 'name': 'UK'},
@@ -124,7 +124,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.15),
+                                color: Colors.black.withValues(alpha: 0.15),
                                 blurRadius: 20,
                                 offset: const Offset(0, 6),
                               ),
@@ -150,7 +150,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                           'Your secure health vault',
                           style: TextStyle(
                             fontSize: 13,
-                            color: Colors.white.withOpacity(0.85),
+                            color: Colors.white.withValues(alpha: 0.85),
                           ),
                         ),
                       ],
@@ -165,7 +165,9 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
+                          color: Colors.black.withValues(
+                            alpha: isDark ? 0.3 : 0.08,
+                          ),
                           blurRadius: 24,
                           offset: const Offset(0, 8),
                         ),
@@ -310,10 +312,10 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                               ? AppColors.textSecondaryDark
                               : AppColors.textSecondaryLight,
                         ),
-                        children: [
+                        children: const [
                           TextSpan(
                             text: 'Terms & Privacy Policy',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppColors.primary,
                               fontWeight: FontWeight.w500,
                             ),
@@ -348,8 +350,10 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
           return ListTile(
             leading: Text(c['flag']!, style: const TextStyle(fontSize: 24)),
             title: Text(c['name']!),
-            trailing: Text(c['code']!,
-                style: const TextStyle(fontWeight: FontWeight.w500)),
+            trailing: Text(
+              c['code']!,
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
             onTap: () {
               setState(() => _selectedCountryCode = c['code']!);
               Navigator.pop(context);

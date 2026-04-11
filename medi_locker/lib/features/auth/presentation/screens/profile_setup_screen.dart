@@ -163,7 +163,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                _SectionLabel(label: 'Basic Information'),
+                const _SectionLabel(label: 'Basic Information'),
                 const SizedBox(height: 12),
 
                 // First name
@@ -245,7 +245,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
                 // Gender
                 DropdownButtonFormField<String>(
-                  value: _selectedGender,
+                  initialValue: _selectedGender,
                   decoration: const InputDecoration(
                     labelText: 'Gender',
                     prefixIcon: Icon(Icons.wc_outlined),
@@ -257,12 +257,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                _SectionLabel(label: 'Health Information'),
+                const _SectionLabel(label: 'Health Information'),
                 const SizedBox(height: 12),
 
                 // Blood group
                 DropdownButtonFormField<String>(
-                  value: _selectedBloodGroup,
+                  initialValue: _selectedBloodGroup,
                   decoration: const InputDecoration(
                     labelText: 'Blood group (optional)',
                     prefixIcon: Icon(Icons.bloodtype_outlined),
@@ -280,16 +280,17 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     color: AppColors.infoContainer,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Row(
+                  child: const Row(
                     children: [
-                      const Icon(Icons.info_outline,
-                          color: AppColors.info, size: 18),
-                      const SizedBox(width: 10),
+                      Icon(Icons.info_outline, color: AppColors.info, size: 18),
+                      SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           'You can add allergies and conditions in your profile later.',
                           style: TextStyle(
-                              fontSize: 12, color: AppColors.info),
+                            fontSize: 12,
+                            color: AppColors.info,
+                          ),
                         ),
                       ),
                     ],

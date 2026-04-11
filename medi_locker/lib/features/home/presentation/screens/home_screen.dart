@@ -258,7 +258,7 @@ class _HealthSummaryCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Text(
@@ -291,7 +291,7 @@ class _StatChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
+        color: Colors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -398,7 +398,7 @@ class _AskCuraCard extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
+                color: Colors.white.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: const Icon(Icons.smart_toy_outlined,
@@ -420,7 +420,9 @@ class _AskCuraCard extends StatelessWidget {
                   Text(
                     'Get AI-powered health guidance',
                     style: TextStyle(
-                        color: Colors.white.withOpacity(0.8), fontSize: 12),
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontSize: 12,
+                      ),
                   ),
                 ],
               ),
@@ -429,7 +431,7 @@ class _AskCuraCard extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(Icons.arrow_forward_ios,
