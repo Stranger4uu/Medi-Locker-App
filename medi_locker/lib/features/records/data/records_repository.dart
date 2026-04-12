@@ -141,17 +141,34 @@ class RecordsRepository {
   Future<String> saveReportForUser(ReportModel report) async {
     final sourcePath = await getDecryptedFilePath(report);
     final sourceFile = File(sourcePath);
+    final imageDir = Directory('/storage/emulated/0/DCIM/Medi Locker');
     final downloadsDir = Directory('/storage/emulated/0/Download');
     final fallbackDir = await getApplicationDocumentsDirectory();
-    final baseDir = await downloadsDir.exists() ? downloadsDir : fallbackDir;
+    final baseDir = report.fileType == 'image'
+        ? (await _ensureDirectory(imageDir) ??
+            await _ensureDirectory(downloadsDir) ??
+            fallbackDir)
+        : (await _ensureDirectory(downloadsDir) ?? fallbackDir);
 
     final safeName = report.fileName.trim().isEmpty
         ? '${report.title}.${report.originalExt ?? 'pdf'}'
         : report.fileName;
-    final targetFile = File('${baseDir.path}/${_buildUniqueName(baseDir, safeName)}');
+    final targetFile =
+        File('${baseDir.path}/${_buildUniqueName(baseDir, safeName)}');
 
     await sourceFile.copy(targetFile.path);
     return targetFile.path;
+  }
+
+  Future<Directory?> _ensureDirectory(Directory directory) async {
+    try {
+      if (!await directory.exists()) {
+        await directory.create(recursive: true);
+      }
+      return directory;
+    } catch (_) {
+      return null;
+    }
   }
 
   String _buildUniqueName(Directory dir, String fileName) {

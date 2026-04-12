@@ -68,6 +68,7 @@ exports.curaChat = onRequest(
   {
     secrets: [geminiApiKey],
     cors: true,
+    invoker: 'public',
     timeoutSeconds: 60,
     memory: '256MiB',
   },
@@ -158,7 +159,7 @@ exports.curaChat = onRequest(
 
       // ── 6. Call Gemini 1.5 Flash ──────────────────────────────────────
       const genAI = new GoogleGenerativeAI(geminiApiKey.value());
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
       const result = await model.generateContent(fullPrompt);
       let response = result.response.text().trim();

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../constants/app_colors.dart';
+import 'back_to_home_scope.dart';
 
 class MainShell extends StatelessWidget {
   final Widget child;
@@ -20,53 +21,56 @@ class MainShell extends StatelessWidget {
     final idx = _currentIndex(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      body: child,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
-          border: Border(
-            top: BorderSide(
-              color: isDark ? AppColors.borderDark : AppColors.borderLight,
-              width: 0.8,
+    return BackToHomeScope(
+      exitOnHome: true,
+      child: Scaffold(
+        body: child,
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+            border: Border(
+              top: BorderSide(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                width: 0.8,
+              ),
             ),
           ),
-        ),
-        child: SafeArea(
-          child: SizedBox(
-            height: 64,
-            child: Row(
-              children: [
-                _NavItem(
-                  icon: Icons.home_outlined,
-                  activeIcon: Icons.home,
-                  label: 'Home',
-                  isActive: idx == 0,
-                  onTap: () => context.go('/home'),
-                ),
-                _NavItem(
-                  icon: Icons.smart_toy_outlined,
-                  activeIcon: Icons.smart_toy,
-                  label: 'Cura',
-                  isActive: idx == 1,
-                  onTap: () => context.go('/cura'),
-                  isHighlighted: true,
-                ),
-                _NavItem(
-                  icon: Icons.folder_outlined,
-                  activeIcon: Icons.folder,
-                  label: 'Records',
-                  isActive: idx == 2,
-                  onTap: () => context.go('/records'),
-                ),
-                _NavItem(
-                  icon: Icons.person_outline,
-                  activeIcon: Icons.person,
-                  label: 'Profile',
-                  isActive: idx == 3,
-                  onTap: () => context.go('/profile'),
-                ),
-              ],
+          child: SafeArea(
+            child: SizedBox(
+              height: 64,
+              child: Row(
+                children: [
+                  _NavItem(
+                    icon: Icons.home_outlined,
+                    activeIcon: Icons.home,
+                    label: 'Home',
+                    isActive: idx == 0,
+                    onTap: () => context.go('/home'),
+                  ),
+                  _NavItem(
+                    icon: Icons.smart_toy_outlined,
+                    activeIcon: Icons.smart_toy,
+                    label: 'Cura',
+                    isActive: idx == 1,
+                    onTap: () => context.go('/cura'),
+                    isHighlighted: true,
+                  ),
+                  _NavItem(
+                    icon: Icons.folder_outlined,
+                    activeIcon: Icons.folder,
+                    label: 'Records',
+                    isActive: idx == 2,
+                    onTap: () => context.go('/records'),
+                  ),
+                  _NavItem(
+                    icon: Icons.person_outline,
+                    activeIcon: Icons.person,
+                    label: 'Profile',
+                    isActive: idx == 3,
+                    onTap: () => context.go('/profile'),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

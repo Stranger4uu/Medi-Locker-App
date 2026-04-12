@@ -10,7 +10,7 @@ class CuraRepository {
   final _firestore = FirebaseFirestore.instance;
 
   static const String _functionUrl =
-      'https://YOUR_REGION-YOUR_PROJECT_ID.cloudfunctions.net/curaChat';
+      'https://curachat-mv34zu7dza-uc.a.run.app';
 
   static bool get _isConfigured => !_functionUrl.contains('YOUR_REGION');
 

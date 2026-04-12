@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../providers/cura_provider.dart';
 import '../widgets/chat_bubble.dart';
+import '../widgets/cura_avatar.dart';
 import '../widgets/cura_typing_indicator.dart';
 
 class CuraScreen extends ConsumerStatefulWidget {
@@ -63,19 +64,11 @@ class _CuraScreenState extends ConsumerState<CuraScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
+        title: const Row(
           children: [
-            Container(
-              width: 34, height: 34,
-              decoration: BoxDecoration(
-                color: AppColors.primaryContainer,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.smart_toy,
-                  color: AppColors.primary, size: 20),
-            ),
-            const SizedBox(width: 10),
-            const Column(
+            CuraAvatar(size: 34, radius: 10),
+            SizedBox(width: 10),
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -271,15 +264,7 @@ class _WelcomeState extends StatelessWidget {
       child: Column(
         children: [
           const SizedBox(height: 20),
-          Container(
-            width: 64, height: 64,
-            decoration: BoxDecoration(
-              color: AppColors.primaryContainer,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Icon(Icons.smart_toy,
-                size: 36, color: AppColors.primary),
-          ),
+          const CuraAvatar(size: 64, radius: 20),
           const SizedBox(height: 16),
           const Text("Hi! I'm Cura",
               style: TextStyle(

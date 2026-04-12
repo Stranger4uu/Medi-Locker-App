@@ -448,30 +448,42 @@ class _InfoRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            size: 18,
-            color: isDark
-                ? AppColors.textSecondaryDark
-                : AppColors.textSecondaryLight,
-          ),
-          const SizedBox(width: 12),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              color: isDark
-                  ? AppColors.textSecondaryDark
-                  : AppColors.textSecondaryLight,
+          SizedBox(
+            width: 150,
+            child: Row(
+              children: [
+                Icon(
+                  icon,
+                  size: 18,
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondaryLight,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          const Spacer(),
-          Flexible(
+          Expanded(
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style:
+                  const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
             ),
           ),
         ],
@@ -531,6 +543,8 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
   final _firstCtrl = TextEditingController();
   final _lastCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
+  final _allergiesCtrl = TextEditingController();
+  final _conditionsCtrl = TextEditingController();
   bool _isLoading = false;
   bool _loaded = false;
 
@@ -550,7 +564,32 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     _firstCtrl.text = data['first_name'] ?? '';
     _lastCtrl.text = data['last_name'] ?? '';
     _phoneCtrl.text = data['phone'] ?? '';
+    _allergiesCtrl.text = _commaSeparated(data['allergies']);
+    _conditionsCtrl.text = _commaSeparated(data['chronic_conditions']);
     setState(() => _loaded = true);
+  }
+
+  String _commaSeparated(dynamic value) {
+    if (value is List) {
+      return value
+          .map((item) => item?.toString().trim() ?? '')
+          .where((item) => item.isNotEmpty && item.toLowerCase() != 'nan')
+          .join(', ');
+    }
+
+    if (value is String && value.trim().toLowerCase() != 'nan') {
+      return value.trim();
+    }
+
+    return '';
+  }
+
+  List<String> _splitValues(String value) {
+    return value
+        .split(',')
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty && item.toLowerCase() != 'nan')
+        .toList();
   }
 
   Future<void> _save() async {
@@ -565,8 +604,10 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
           .update({
         'first_name': first,
         'last_name': last,
-        'name': '$first $last',
+        'name': [first, last].where((part) => part.isNotEmpty).join(' '),
         'phone': _phoneCtrl.text.trim(),
+        'allergies': _splitValues(_allergiesCtrl.text),
+        'chronic_conditions': _splitValues(_conditionsCtrl.text),
         'updated_at': FieldValue.serverTimestamp(),
       });
       if (mounted) {
@@ -587,6 +628,8 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     _firstCtrl.dispose();
     _lastCtrl.dispose();
     _phoneCtrl.dispose();
+    _allergiesCtrl.dispose();
+    _conditionsCtrl.dispose();
     super.dispose();
   }
 
@@ -624,6 +667,24 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                   keyboardType: TextInputType.phone,
                   decoration:
                       const InputDecoration(labelText: 'Phone (optional)'),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _allergiesCtrl,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: 'Allergies',
+                    hintText: 'Comma separated, e.g. dust, pollen',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _conditionsCtrl,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: 'Conditions',
+                    hintText: 'Comma separated, e.g. diabetes, asthma',
+                  ),
                 ),
                 const SizedBox(height: 24),
                 SizedBox(

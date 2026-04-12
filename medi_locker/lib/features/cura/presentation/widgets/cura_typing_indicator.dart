@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import 'cura_avatar.dart';
 
 class CuraTypingIndicator extends StatefulWidget {
   const CuraTypingIndicator({super.key});
@@ -45,15 +46,7 @@ class _CuraTypingIndicatorState extends State<CuraTypingIndicator>
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         children: [
-          Container(
-            width: 28, height: 28,
-            decoration: BoxDecoration(
-              color: AppColors.primaryContainer,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(Icons.smart_toy,
-                size: 16, color: AppColors.primary),
-          ),
+          const CuraAvatar(size: 28, radius: 8),
           const SizedBox(width: 8),
           Container(
             padding:

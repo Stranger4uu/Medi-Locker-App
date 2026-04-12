@@ -16,6 +16,7 @@ import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/records/presentation/screens/records_screen.dart';
 import '../../features/records/presentation/screens/report_detail_screen.dart';
 import '../../features/records/presentation/screens/upload_screen.dart';
+import '../shell/back_to_home_scope.dart';
 import '../shell/main_shell.dart';
 
 class AppRoutes {
@@ -83,18 +84,23 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.notifications,
-        builder: (_, __) => const NotificationsScreen(),
+        builder: (_, __) =>
+            const BackToHomeScope(child: NotificationsScreen()),
       ),
       GoRoute(
         path: AppRoutes.privacyPolicy,
-        builder: (_, __) => const PrivacyPolicyScreen(),
+        builder: (_, __) =>
+            const BackToHomeScope(child: PrivacyPolicyScreen()),
       ),
-      GoRoute(path: AppRoutes.upload, builder: (_, __) => const UploadScreen()),
+      GoRoute(
+        path: AppRoutes.upload,
+        builder: (_, __) => const BackToHomeScope(child: UploadScreen()),
+      ),
       GoRoute(
         path: '/report/:id',
         builder: (context, state) {
           final id = state.pathParameters['id'] ?? '';
-          return ReportDetailScreen(reportId: id);
+          return BackToHomeScope(child: ReportDetailScreen(reportId: id));
         },
       ),
       ShellRoute(
