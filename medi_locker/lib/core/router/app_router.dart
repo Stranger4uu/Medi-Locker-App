@@ -10,11 +10,13 @@ import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/cura/presentation/screens/cura_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
+import '../../features/legal/presentation/screens/privacy_policy_screen.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/records/presentation/screens/records_screen.dart';
 import '../../features/records/presentation/screens/report_detail_screen.dart';
 import '../../features/records/presentation/screens/upload_screen.dart';
+import '../shell/back_to_home_scope.dart';
 import '../shell/main_shell.dart';
 
 class AppRoutes {
@@ -25,25 +27,44 @@ class AppRoutes {
   static const profileSetup = '/profile-setup';
   static const notifications = '/notifications';
   static const upload = '/upload';
-  static const reportDetail = '/report/:id';
+  static const privacyPolicy = '/privacy-policy';
+}
+
+final _authListenable = _AuthStateListenable();
+
+class _AuthStateListenable extends ChangeNotifier {
+  _AuthStateListenable() {
+    FirebaseAuth.instance.authStateChanges().listen((_) {
+      notifyListeners();
+    });
+  }
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: AppRoutes.splash,
+    refreshListenable: _authListenable,
     debugLogDiagnostics: false,
     redirect: (context, state) {
       final user = FirebaseAuth.instance.currentUser;
-      final loc = state.matchedLocation;
+      final location = state.matchedLocation;
       const publicRoutes = [
         AppRoutes.splash,
         AppRoutes.onboarding,
         AppRoutes.login,
         AppRoutes.register,
+        AppRoutes.profileSetup,
       ];
-      if (user == null && !publicRoutes.contains(loc)) {
+
+      if (user == null && !publicRoutes.contains(location)) {
         return AppRoutes.login;
       }
+
+      if (user != null &&
+          (location == AppRoutes.login || location == AppRoutes.register)) {
+        return '/home';
+      }
+
       return null;
     },
     routes: [
@@ -63,14 +84,23 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.notifications,
-        builder: (_, __) => const NotificationsScreen(),
+        builder: (_, __) =>
+            const BackToHomeScope(child: NotificationsScreen()),
       ),
-      GoRoute(path: AppRoutes.upload, builder: (_, __) => const UploadScreen()),
+      GoRoute(
+        path: AppRoutes.privacyPolicy,
+        builder: (_, __) =>
+            const BackToHomeScope(child: PrivacyPolicyScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.upload,
+        builder: (_, __) => const BackToHomeScope(child: UploadScreen()),
+      ),
       GoRoute(
         path: '/report/:id',
         builder: (context, state) {
           final id = state.pathParameters['id'] ?? '';
-          return ReportDetailScreen(reportId: id);
+          return BackToHomeScope(child: ReportDetailScreen(reportId: id));
         },
       ),
       ShellRoute(
@@ -83,7 +113,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
     ],
-    errorBuilder: (context, state) =>
-        Scaffold(body: Center(child: Text('Page not found: ${state.error}'))),
+    errorBuilder: (context, state) {
+      return Scaffold(
+        body: Center(child: Text('Page not found: ${state.error}')),
+      );
+    },
   );
 });

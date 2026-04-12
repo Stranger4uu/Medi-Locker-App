@@ -1,5 +1,29 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+List<String> _stringListFromDynamic(dynamic value) {
+  if (value is List) {
+    return value
+        .map((item) => item?.toString().trim() ?? '')
+        .where((item) => item.isNotEmpty && item.toLowerCase() != 'nan')
+        .toList();
+  }
+
+  if (value is String) {
+    final normalized = value.trim();
+    if (normalized.isEmpty || normalized.toLowerCase() == 'nan') {
+      return const [];
+    }
+
+    return normalized
+        .split(',')
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty && item.toLowerCase() != 'nan')
+        .toList();
+  }
+
+  return const [];
+}
+
 class UserModel {
   final String uid;
   final String name;
@@ -45,8 +69,8 @@ class UserModel {
       dob: (d['dob'] as Timestamp?)?.toDate(),
       bloodGroup: d['blood_group'] ?? '',
       gender: d['gender'] ?? '',
-      allergies: List<String>.from(d['allergies'] ?? []),
-      chronicConditions: List<String>.from(d['chronic_conditions'] ?? []),
+      allergies: _stringListFromDynamic(d['allergies']),
+      chronicConditions: _stringListFromDynamic(d['chronic_conditions']),
       isProfileComplete: d['is_profile_complete'] ?? false,
       fcmToken: d['fcm_token'],
       createdAt: (d['created_at'] as Timestamp?)?.toDate(),

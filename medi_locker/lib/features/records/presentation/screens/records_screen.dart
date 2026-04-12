@@ -123,14 +123,17 @@ class _RecordsScreenState extends ConsumerState<RecordsScreen> {
   void _confirmDelete(ReportModel report) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Delete Report'),
         content: Text('Delete "${report.title}"? This cannot be undone.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               try {
                 await ref.read(_repoProvider).deleteReport(report.id, report.filePath);
                 if (mounted) {

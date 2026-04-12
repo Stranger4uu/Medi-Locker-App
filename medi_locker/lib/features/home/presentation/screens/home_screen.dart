@@ -1,53 +1,129 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../profile/providers/user_provider.dart';
+import '../../../update/models/app_update_info.dart';
+import '../../../update/providers/app_update_provider.dart';
+import '../widgets/health_summary_card.dart';
+import '../widgets/health_tip_card.dart';
+import '../widgets/quick_action_button.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  bool _checkedForUpdates = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_checkedForUpdates) return;
+    _checkedForUpdates = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkForUpdates();
+    });
+  }
+
+  Future<void> _checkForUpdates() async {
+    final update = await ref.read(appUpdateRepositoryProvider).checkForUpdate();
+    if (!mounted || update == null) return;
+    await _showUpdateDialog(update);
+  }
+
+  Future<void> _showUpdateDialog(AppUpdateInfo update) async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Update Available'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Version ${update.latestVersion} is available. You are on ${update.currentVersion}.',
+            ),
+            if (update.releaseNotes.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                update.releaseNotes,
+                maxLines: 6,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 13, height: 1.5),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              await ref
+                  .read(appUpdateRepositoryProvider)
+                  .dismissVersion(update.latestVersion);
+              if (dialogContext.mounted) {
+                Navigator.pop(dialogContext);
+              }
+            },
+            child: const Text('Later'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              await ref.read(appUpdateRepositoryProvider).openDownload(update);
+              if (dialogContext.mounted) {
+                Navigator.pop(dialogContext);
+              }
+            },
+            child: const Text('Update'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final firstName = ref.watch(userFirstNameProvider);
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.backgroundDark : const Color(0xFFF7F9F7),
+      backgroundColor:
+          isDark ? AppColors.backgroundDark : const Color(0xFFF7F9F7),
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 child: Row(
                   children: [
                     Expanded(
-                      child: StreamBuilder<DocumentSnapshot>(
-                        stream: uid != null
-                            ? FirebaseFirestore.instance.collection('users').doc(uid).snapshots()
-                            : null,
-                        builder: (context, snap) {
-                          final name = snap.data?.get('first_name') as String? ?? 'there';
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Hello, $name!',
-                                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Your health, secured.',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                                ),
-                              ),
-                            ],
-                          );
-                        },
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Hello, $firstName!',
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Your health, secured.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     GestureDetector(
@@ -56,10 +132,13 @@ class HomeScreen extends StatelessWidget {
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                          color: isDark ? AppColors.surfaceDark : AppColors.cardLight,
+                          color:
+                              isDark ? AppColors.surfaceDark : AppColors.cardLight,
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                            color: isDark
+                                ? AppColors.borderDark
+                                : AppColors.borderLight,
                           ),
                         ),
                         child: Stack(
@@ -67,7 +146,9 @@ class HomeScreen extends StatelessWidget {
                           children: [
                             Icon(
                               Icons.notifications_outlined,
-                              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                              color: isDark
+                                  ? AppColors.textPrimaryDark
+                                  : AppColors.textPrimaryLight,
                               size: 22,
                             ),
                             Positioned(
@@ -90,18 +171,10 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
             ),
-            SliverToBoxAdapter(
+            const SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: StreamBuilder<QuerySnapshot>(
-                  stream: uid != null
-                      ? FirebaseFirestore.instance.collection('users').doc(uid).collection('reports').snapshots()
-                      : null,
-                  builder: (context, snap) {
-                    final count = snap.data?.docs.length ?? 0;
-                    return _HealthSummaryCard(reportCount: count, uid: uid);
-                  },
-                ),
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                child: HealthSummaryCard(),
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
@@ -111,12 +184,16 @@ class HomeScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Quick Actions', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    const Text(
+                      'Quick Actions',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
                     const SizedBox(height: 12),
                     Row(
                       children: [
                         Expanded(
-                          child: _QuickActionCard(
+                          child: QuickActionButton(
                             icon: Icons.upload_file_outlined,
                             label: 'Upload Report',
                             color: AppColors.primary,
@@ -126,7 +203,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: _QuickActionCard(
+                          child: QuickActionButton(
                             icon: Icons.folder_open_outlined,
                             label: 'My Records',
                             color: AppColors.info,
@@ -143,15 +220,19 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
-            SliverToBoxAdapter(
+            const SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Health Tip of the Day', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 12),
-                    _HealthTipCard(isDark: isDark),
+                    Text(
+                      'Health Tip of the Day',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                    SizedBox(height: 12),
+                    HealthTipCard(),
                   ],
                 ),
               ),
@@ -164,148 +245,9 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-class _HealthSummaryCard extends StatelessWidget {
-  final int reportCount;
-  final String? uid;
-  const _HealthSummaryCard({required this.reportCount, required this.uid});
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<DocumentSnapshot>(
-      stream: uid != null ? FirebaseFirestore.instance.collection('users').doc(uid).snapshots() : null,
-      builder: (context, snap) {
-        final bloodGroup = snap.data?.get('blood_group') as String? ?? '-';
-        return Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF2E7D32), Color(0xFF43A047)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Health Summary',
-                style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  _StatChip(icon: Icons.description_outlined, value: '$reportCount', label: 'Reports'),
-                  const SizedBox(width: 12),
-                  _StatChip(icon: Icons.bloodtype_outlined, value: bloodGroup.isEmpty ? '-' : bloodGroup, label: 'Blood Group'),
-                  const Spacer(),
-                  GestureDetector(
-                    onTap: () => context.go('/records'),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Text(
-                        'View all',
-                        style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _StatChip extends StatelessWidget {
-  final IconData icon;
-  final String value;
-  final String label;
-  const _StatChip({required this.icon, required this.value, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.white, size: 18),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(value, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-              Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _QuickActionCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final Color bgColor;
-  final VoidCallback onTap;
-
-  const _QuickActionCard({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.bgColor,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.cardDark : AppColors.cardLight,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDark ? AppColors.borderDark : AppColors.borderLight,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: bgColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color, size: 22),
-            ),
-            const SizedBox(height: 12),
-            Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _AskCuraCard extends StatelessWidget {
   final VoidCallback onTap;
+
   const _AskCuraCard({required this.onTap});
 
   @override
@@ -331,18 +273,32 @@ class _AskCuraCard extends StatelessWidget {
                 color: Colors.white.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: const Icon(Icons.smart_toy_outlined, color: Colors.white, size: 26),
+              child: const Icon(
+                Icons.smart_toy_outlined,
+                color: Colors.white,
+                size: 26,
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Ask Cura', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Ask Cura',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 3),
                   Text(
                     'Get AI-powered health guidance',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12),
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
@@ -354,68 +310,14 @@ class _AskCuraCard extends StatelessWidget {
                 color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 14),
+              child: const Icon(
+                Icons.arrow_forward_ios,
+                color: Colors.white,
+                size: 14,
+              ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _HealthTipCard extends StatelessWidget {
-  final bool isDark;
-  const _HealthTipCard({required this.isDark});
-
-  static const _tips = [
-    'Drink at least 8 glasses of water daily to support kidney function and energy levels.',
-    'Walk for 30 minutes a day to reduce the risk of heart disease.',
-    'Sleep 7 to 9 hours each night to support immunity and recovery.',
-    'Eat a rainbow of vegetables daily for a wide range of vitamins and antioxidants.',
-    'Limit processed foods and added sugars to maintain healthy blood pressure and weight.',
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final tip = _tips[DateTime.now().day % _tips.length];
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.cardDark : AppColors.cardLight,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.warningContainer,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.lightbulb_outline, color: AppColors.warning, size: 22),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Daily Tip', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.warning)),
-                const SizedBox(height: 4),
-                Text(
-                  tip,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                    height: 1.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

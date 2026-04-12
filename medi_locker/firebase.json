@@ -1,1 +1,28 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"medi-locker-4bb57","appId":"1:555568965328:android:f82807c96c8482c175a0d5","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"medi-locker-4bb57","configurations":{"android":"1:555568965328:android:f82807c96c8482c175a0d5","ios":"1:555568965328:ios:66aaf63fdb517ca275a0d5","macos":"1:555568965328:ios:66aaf63fdb517ca275a0d5","web":"1:555568965328:web:ab6757e5406a3af275a0d5","windows":"1:555568965328:web:803dba5636e205e075a0d5"}}}}}}
+{
+  "functions": {
+    "source": "functions"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "medi-locker-4bb57",
+          "appId": "1:555568965328:android:f82807c96c8482c175a0d5",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "medi-locker-4bb57",
+          "configurations": {
+            "android": "1:555568965328:android:f82807c96c8482c175a0d5",
+            "ios": "1:555568965328:ios:66aaf63fdb517ca275a0d5",
+            "macos": "1:555568965328:ios:66aaf63fdb517ca275a0d5",
+            "web": "1:555568965328:web:ab6757e5406a3af275a0d5",
+            "windows": "1:555568965328:web:803dba5636e205e075a0d5"
+          }
+        }
+      }
+    }
+  }
+}
