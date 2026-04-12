@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,6 +11,7 @@ import '../models/app_update_info.dart';
 
 class AppUpdateRepository {
   static const _dismissedVersionKey = 'dismissed_update_version';
+  final FirebaseRemoteConfig _remoteConfig = FirebaseRemoteConfig.instance;
 
   Future<String> getCurrentVersion() async {
     final packageInfo = await PackageInfo.fromPlatform();
@@ -20,6 +22,14 @@ class AppUpdateRepository {
     bool includeDismissed = false,
   }) async {
     final currentVersion = await getCurrentVersion();
+    final remoteUpdate = await _checkRemoteConfigUpdate(
+      currentVersion: currentVersion,
+      includeDismissed: includeDismissed,
+    );
+    if (remoteUpdate != null) {
+      return remoteUpdate;
+    }
+
     final response = await http.get(
       Uri.parse(AppReleaseConfig.latestReleaseApi),
       headers: const {
@@ -76,6 +86,50 @@ class AppUpdateRepository {
   Future<bool> openDownload(AppUpdateInfo update) async {
     final uri = Uri.parse(update.downloadUrl);
     return launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  Future<bool> openDirectUrl(String url) async {
+    if (url.trim().isEmpty) return false;
+    final uri = Uri.parse(url);
+    return launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  Future<AppUpdateInfo?> _checkRemoteConfigUpdate({
+    required String currentVersion,
+    required bool includeDismissed,
+  }) async {
+    try {
+      await _remoteConfig.fetchAndActivate();
+    } catch (_) {
+      return null;
+    }
+
+    final latestVersion = _normalizeVersion(
+      _remoteConfig.getString('latest_version'),
+    );
+    final downloadUrl = _remoteConfig.getString('latest_apk_url').trim();
+
+    if (latestVersion.isEmpty ||
+        downloadUrl.isEmpty ||
+        !_isNewer(latestVersion, currentVersion)) {
+      return null;
+    }
+
+    if (!includeDismissed) {
+      final prefs = await SharedPreferences.getInstance();
+      final dismissedVersion = prefs.getString(_dismissedVersionKey);
+      if (dismissedVersion == latestVersion) {
+        return null;
+      }
+    }
+
+    return AppUpdateInfo(
+      currentVersion: currentVersion,
+      latestVersion: latestVersion,
+      downloadUrl: downloadUrl,
+      releaseNotes: '',
+      releasePageUrl: downloadUrl,
+    );
   }
 
   bool _isNewer(String latest, String current) {
