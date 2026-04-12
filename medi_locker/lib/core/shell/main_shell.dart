@@ -8,9 +8,10 @@ class MainShell extends StatelessWidget {
   const MainShell({super.key, required this.child});
 
   int _currentIndex(BuildContext context) {
-    final location = GoRouterState.of(context).matchedLocation;
-    if (location.startsWith('/cura')) return 1;
-    if (location.startsWith('/profile')) return 2;
+    final loc = GoRouterState.of(context).matchedLocation;
+    if (loc.startsWith('/cura')) return 1;
+    if (loc.startsWith('/records')) return 2;
+    if (loc.startsWith('/profile')) return 3;
     return 0;
   }
 
@@ -52,10 +53,17 @@ class MainShell extends StatelessWidget {
                   isHighlighted: true,
                 ),
                 _NavItem(
+                  icon: Icons.folder_outlined,
+                  activeIcon: Icons.folder,
+                  label: 'Records',
+                  isActive: idx == 2,
+                  onTap: () => context.go('/records'),
+                ),
+                _NavItem(
                   icon: Icons.person_outline,
                   activeIcon: Icons.person,
                   label: 'Profile',
-                  isActive: idx == 2,
+                  isActive: idx == 3,
                   onTap: () => context.go('/profile'),
                 ),
               ],
@@ -88,46 +96,8 @@ class _NavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final activeColor = isDark ? AppColors.primaryLight : AppColors.primary;
-    final inactiveColor = isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
-
-    // Cura button — pill highlight style
-    if (isHighlighted) {
-      return Expanded(
-        child: GestureDetector(
-          onTap: onTap,
-          behavior: HitTestBehavior.opaque,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-                decoration: BoxDecoration(
-                  color: isActive
-                      ? (isDark ? AppColors.primaryDark : AppColors.primaryContainer)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Icon(
-                  isActive ? activeIcon : icon,
-                  color: isActive ? activeColor : inactiveColor,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-                  color: isActive ? activeColor : inactiveColor,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+    final inactiveColor =
+        isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
 
     return Expanded(
       child: GestureDetector(
@@ -136,16 +106,32 @@ class _NavItem extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              isActive ? activeIcon : icon,
-              color: isActive ? activeColor : inactiveColor,
-              size: 24,
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: isHighlighted
+                  ? const EdgeInsets.symmetric(horizontal: 16, vertical: 5)
+                  : EdgeInsets.zero,
+              decoration: isHighlighted
+                  ? BoxDecoration(
+                      color: isActive
+                          ? (isDark
+                              ? AppColors.primaryDark
+                              : AppColors.primaryContainer)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(20),
+                    )
+                  : null,
+              child: Icon(
+                isActive ? activeIcon : icon,
+                color: isActive ? activeColor : inactiveColor,
+                size: 22,
+              ),
             ),
             const SizedBox(height: 2),
             Text(
               label,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
                 color: isActive ? activeColor : inactiveColor,
               ),

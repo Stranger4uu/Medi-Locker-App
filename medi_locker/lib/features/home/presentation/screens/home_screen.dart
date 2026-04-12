@@ -14,46 +14,35 @@ class HomeScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : const Color(0xFFF7F9F7),
+      backgroundColor: isDark ? AppColors.backgroundDark : const Color(0xFFF7F9F7),
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
-            // ── Top bar ──
             SliverToBoxAdapter(
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 child: Row(
                   children: [
                     Expanded(
                       child: StreamBuilder<DocumentSnapshot>(
                         stream: uid != null
-                            ? FirebaseFirestore.instance
-                                .collection('users')
-                                .doc(uid)
-                                .snapshots()
+                            ? FirebaseFirestore.instance.collection('users').doc(uid).snapshots()
                             : null,
-                        builder: (context, snapshot) {
-                          final name = snapshot.data?.get('first_name') as String? ?? 'there';
+                        builder: (context, snap) {
+                          final name = snap.data?.get('first_name') as String? ?? 'there';
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Hello, $name! 👋',
-                                style: const TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                'Hello, $name!',
+                                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 'Your health, secured.',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: isDark
-                                      ? AppColors.textSecondaryDark
-                                      : AppColors.textSecondaryLight,
+                                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                                 ),
                               ),
                             ],
@@ -61,21 +50,16 @@ class HomeScreen extends StatelessWidget {
                         },
                       ),
                     ),
-                    // Notification bell
                     GestureDetector(
                       onTap: () => context.push('/notifications'),
                       child: Container(
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                          color: isDark
-                              ? AppColors.surfaceDark
-                              : AppColors.cardLight,
+                          color: isDark ? AppColors.surfaceDark : AppColors.cardLight,
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                            color: isDark
-                                ? AppColors.borderDark
-                                : AppColors.borderLight,
+                            color: isDark ? AppColors.borderDark : AppColors.borderLight,
                           ),
                         ),
                         child: Stack(
@@ -83,12 +67,9 @@ class HomeScreen extends StatelessWidget {
                           children: [
                             Icon(
                               Icons.notifications_outlined,
-                              color: isDark
-                                  ? AppColors.textPrimaryDark
-                                  : AppColors.textPrimaryLight,
+                              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                               size: 22,
                             ),
-                            // Red dot — unread indicator
                             Positioned(
                               top: 8,
                               right: 8,
@@ -109,40 +90,28 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
             ),
-
-            // ── Health summary card ──
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: StreamBuilder<QuerySnapshot>(
                   stream: uid != null
-                      ? FirebaseFirestore.instance
-                          .collection('users')
-                          .doc(uid)
-                          .collection('reports')
-                          .snapshots()
+                      ? FirebaseFirestore.instance.collection('users').doc(uid).collection('reports').snapshots()
                       : null,
-                  builder: (context, snapshot) {
-                    final count = snapshot.data?.docs.length ?? 0;
-                    return _HealthSummaryCard(reportCount: count);
+                  builder: (context, snap) {
+                    final count = snap.data?.docs.length ?? 0;
+                    return _HealthSummaryCard(reportCount: count, uid: uid);
                   },
                 ),
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-            // ── Quick actions ──
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Quick Actions',
-                      style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w600),
-                    ),
+                    const Text('Quick Actions', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 12),
                     Row(
                       children: [
@@ -152,7 +121,7 @@ class HomeScreen extends StatelessWidget {
                             label: 'Upload Report',
                             color: AppColors.primary,
                             bgColor: AppColors.primaryContainer,
-                            onTap: () {}, // → UploadScreen next session
+                            onTap: () => context.push('/upload'),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -162,32 +131,25 @@ class HomeScreen extends StatelessWidget {
                             label: 'My Records',
                             color: AppColors.info,
                             bgColor: AppColors.infoContainer,
-                            onTap: () {}, // → RecordsScreen next session
+                            onTap: () => context.go('/records'),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    // Ask Cura — full width
                     _AskCuraCard(onTap: () => context.go('/cura')),
                   ],
                 ),
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-            // ── Health tip ──
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Health Tip of the Day',
-                      style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w600),
-                    ),
+                    const Text('Health Tip of the Day', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 12),
                     _HealthTipCard(isDark: isDark),
                   ],
@@ -202,22 +164,17 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-// ── Health summary card ──────────────────────────────────────────────────────
 class _HealthSummaryCard extends StatelessWidget {
   final int reportCount;
-  const _HealthSummaryCard({required this.reportCount});
+  final String? uid;
+  const _HealthSummaryCard({required this.reportCount, required this.uid});
 
   @override
   Widget build(BuildContext context) {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-
     return StreamBuilder<DocumentSnapshot>(
-      stream: uid != null
-          ? FirebaseFirestore.instance.collection('users').doc(uid).snapshots()
-          : null,
-      builder: (context, snapshot) {
-        final bloodGroup = snapshot.data?.get('blood_group') as String? ?? '—';
-
+      stream: uid != null ? FirebaseFirestore.instance.collection('users').doc(uid).snapshots() : null,
+      builder: (context, snap) {
+        final bloodGroup = snap.data?.get('blood_group') as String? ?? '-';
         return Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -233,40 +190,27 @@ class _HealthSummaryCard extends StatelessWidget {
             children: [
               const Text(
                 'Health Summary',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 16),
               Row(
                 children: [
-                  _StatChip(
-                    icon: Icons.description_outlined,
-                    value: '$reportCount',
-                    label: 'Reports',
-                  ),
+                  _StatChip(icon: Icons.description_outlined, value: '$reportCount', label: 'Reports'),
                   const SizedBox(width: 12),
-                  _StatChip(
-                    icon: Icons.bloodtype_outlined,
-                    value: bloodGroup.isEmpty ? '—' : bloodGroup,
-                    label: 'Blood Group',
-                  ),
+                  _StatChip(icon: Icons.bloodtype_outlined, value: bloodGroup.isEmpty ? '-' : bloodGroup, label: 'Blood Group'),
                   const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      'View all',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500),
+                  GestureDetector(
+                    onTap: () => context.go('/records'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'View all',
+                        style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+                      ),
                     ),
                   ),
                 ],
@@ -283,8 +227,7 @@ class _StatChip extends StatelessWidget {
   final IconData icon;
   final String value;
   final String label;
-  const _StatChip(
-      {required this.icon, required this.value, required this.label});
+  const _StatChip({required this.icon, required this.value, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -301,14 +244,8 @@ class _StatChip extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(value,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold)),
-              Text(label,
-                  style: const TextStyle(
-                      color: Colors.white70, fontSize: 11)),
+              Text(value, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11)),
             ],
           ),
         ],
@@ -317,7 +254,6 @@ class _StatChip extends StatelessWidget {
   }
 }
 
-// ── Quick action card ────────────────────────────────────────────────────────
 class _QuickActionCard extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -336,7 +272,6 @@ class _QuickActionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -361,11 +296,7 @@ class _QuickActionCard extends StatelessWidget {
               child: Icon(icon, color: color, size: 22),
             ),
             const SizedBox(height: 12),
-            Text(
-              label,
-              style: const TextStyle(
-                  fontSize: 13, fontWeight: FontWeight.w600),
-            ),
+            Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
           ],
         ),
       ),
@@ -373,7 +304,6 @@ class _QuickActionCard extends StatelessWidget {
   }
 }
 
-// ── Ask Cura card ────────────────────────────────────────────────────────────
 class _AskCuraCard extends StatelessWidget {
   final VoidCallback onTap;
   const _AskCuraCard({required this.onTap});
@@ -401,28 +331,18 @@ class _AskCuraCard extends StatelessWidget {
                 color: Colors.white.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: const Icon(Icons.smart_toy_outlined,
-                  color: Colors.white, size: 26),
+              child: const Icon(Icons.smart_toy_outlined, color: Colors.white, size: 26),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Ask Cura',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold),
-                  ),
+                  const Text('Ask Cura', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 3),
                   Text(
                     'Get AI-powered health guidance',
-                    style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.8),
-                        fontSize: 12,
-                      ),
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12),
                   ),
                 ],
               ),
@@ -434,8 +354,7 @@ class _AskCuraCard extends StatelessWidget {
                 color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.arrow_forward_ios,
-                  color: Colors.white, size: 14),
+              child: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 14),
             ),
           ],
         ),
@@ -444,32 +363,27 @@ class _AskCuraCard extends StatelessWidget {
   }
 }
 
-// ── Health tip card ──────────────────────────────────────────────────────────
 class _HealthTipCard extends StatelessWidget {
   final bool isDark;
   const _HealthTipCard({required this.isDark});
 
-  // Static tips — replace with Firestore fetch later
   static const _tips = [
-    'Drink at least 8 glasses of water daily to keep your body hydrated and support kidney function.',
-    'Walk for 30 minutes a day — it reduces the risk of heart disease by up to 35%.',
-    'Sleep 7–9 hours each night. Poor sleep increases stress hormones and weakens immunity.',
-    'Eat a rainbow of vegetables daily to get a wide range of vitamins and antioxidants.',
+    'Drink at least 8 glasses of water daily to support kidney function and energy levels.',
+    'Walk for 30 minutes a day to reduce the risk of heart disease.',
+    'Sleep 7 to 9 hours each night to support immunity and recovery.',
+    'Eat a rainbow of vegetables daily for a wide range of vitamins and antioxidants.',
     'Limit processed foods and added sugars to maintain healthy blood pressure and weight.',
   ];
 
   @override
   Widget build(BuildContext context) {
     final tip = _tips[DateTime.now().day % _tips.length];
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? AppColors.cardDark : AppColors.cardLight,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? AppColors.borderDark : AppColors.borderLight,
-        ),
+        border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -481,29 +395,20 @@ class _HealthTipCard extends StatelessWidget {
               color: AppColors.warningContainer,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.lightbulb_outline,
-                color: AppColors.warning, size: 22),
+            child: const Icon(Icons.lightbulb_outline, color: AppColors.warning, size: 22),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Daily Tip',
-                  style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.warning),
-                ),
+                const Text('Daily Tip', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.warning)),
                 const SizedBox(height: 4),
                 Text(
                   tip,
                   style: TextStyle(
                     fontSize: 13,
-                    color: isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight,
+                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                     height: 1.5,
                   ),
                 ),
