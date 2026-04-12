@@ -3,27 +3,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/auth/presentation/screens/splash_screen.dart';
+import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/onboarding_screen.dart';
-import '../../features/auth/presentation/screens/phone_login_screen.dart';
-import '../../features/auth/presentation/screens/otp_screen.dart';
 import '../../features/auth/presentation/screens/profile_setup_screen.dart';
+import '../../features/auth/presentation/screens/register_screen.dart';
+import '../../features/auth/presentation/screens/splash_screen.dart';
+import '../../features/cura/presentation/screens/cura_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
+import '../../features/profile/presentation/screens/profile_screen.dart';
+import '../../features/records/presentation/screens/records_screen.dart';
+import '../../features/records/presentation/screens/report_detail_screen.dart';
+import '../../features/records/presentation/screens/upload_screen.dart';
 import '../shell/main_shell.dart';
 
-// Route name constants — use these everywhere, never hardcode strings
 class AppRoutes {
   static const splash = '/';
   static const onboarding = '/onboarding';
   static const login = '/login';
-  static const otp = '/otp';
+  static const register = '/register';
   static const profileSetup = '/profile-setup';
-  static const shell = '/home';
-  static const home = 'home';
-  static const cura = 'cura';
-  static const profile = 'profile';
   static const notifications = '/notifications';
+  static const upload = '/upload';
+  static const reportDetail = '/report/:id';
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -31,38 +33,29 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: false,
     redirect: (context, state) {
-      // Auth guard: if user navigates to shell but is not logged in → send to login
       final user = FirebaseAuth.instance.currentUser;
-      final isGoingToAuth = state.matchedLocation == AppRoutes.login ||
-          state.matchedLocation == AppRoutes.otp ||
-          state.matchedLocation == AppRoutes.splash ||
-          state.matchedLocation == AppRoutes.onboarding;
-
-      if (user == null && !isGoingToAuth) return AppRoutes.login;
+      final loc = state.matchedLocation;
+      const publicRoutes = [
+        AppRoutes.splash,
+        AppRoutes.onboarding,
+        AppRoutes.login,
+        AppRoutes.register,
+      ];
+      if (user == null && !publicRoutes.contains(loc)) {
+        return AppRoutes.login;
+      }
       return null;
     },
     routes: [
-      GoRoute(
-        path: AppRoutes.splash,
-        builder: (_, __) => const SplashScreen(),
-      ),
+      GoRoute(path: AppRoutes.splash, builder: (_, __) => const SplashScreen()),
       GoRoute(
         path: AppRoutes.onboarding,
         builder: (_, __) => const OnboardingScreen(),
       ),
+      GoRoute(path: AppRoutes.login, builder: (_, __) => const LoginScreen()),
       GoRoute(
-        path: AppRoutes.login,
-        builder: (_, __) => const PhoneLoginScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.otp,
-        builder: (context, state) {
-          final extra = state.extra as Map<String, String>;
-          return OtpScreen(
-            phoneNumber: extra['phone'] ?? '',
-            verificationId: extra['verificationId'] ?? '',
-          );
-        },
+        path: AppRoutes.register,
+        builder: (_, __) => const RegisterScreen(),
       ),
       GoRoute(
         path: AppRoutes.profileSetup,
@@ -72,29 +65,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.notifications,
         builder: (_, __) => const NotificationsScreen(),
       ),
-      // Main shell — wraps the 3 bottom tabs
+      GoRoute(path: AppRoutes.upload, builder: (_, __) => const UploadScreen()),
+      GoRoute(
+        path: '/report/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return ReportDetailScreen(reportId: id);
+        },
+      ),
       ShellRoute(
         builder: (context, state, child) => MainShell(child: child),
         routes: [
-          GoRoute(
-            path: '/${AppRoutes.home}',
-            builder: (_, __) => const HomeScreen(),
-          ),
-          GoRoute(
-            path: '/cura',
-            builder: (_, __) => const Placeholder(), // replaced in next session
-          ),
-          GoRoute(
-            path: '/profile',
-            builder: (_, __) => const Placeholder(), // replaced in next session
-          ),
+          GoRoute(path: '/home', builder: (_, __) => const HomeScreen()),
+          GoRoute(path: '/cura', builder: (_, __) => const CuraScreen()),
+          GoRoute(path: '/records', builder: (_, __) => const RecordsScreen()),
+          GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
         ],
       ),
     ],
-    errorBuilder: (context, state) => Scaffold(
-      body: Center(
-        child: Text('Page not found: ${state.error}'),
-      ),
-    ),
+    errorBuilder: (context, state) =>
+        Scaffold(body: Center(child: Text('Page not found: ${state.error}'))),
   );
 });

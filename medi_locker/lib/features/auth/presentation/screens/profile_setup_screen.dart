@@ -17,7 +17,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final _firstNameCtrl = TextEditingController();
   final _lastNameCtrl = TextEditingController();
   bool _isLoading = false;
-
   String? _selectedBloodGroup;
   String? _selectedGender;
   DateTime? _dob;
@@ -38,8 +37,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       initialDate: DateTime(2000),
       firstDate: DateTime(1920),
       lastDate: DateTime.now(),
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
           colorScheme: const ColorScheme.light(primary: AppColors.primary),
         ),
         child: child!,
@@ -56,16 +55,17 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     }
 
     setState(() => _isLoading = true);
-
     try {
-      final uid = FirebaseAuth.instance.currentUser!.uid;
-      final phone = FirebaseAuth.instance.currentUser!.phoneNumber ?? '';
+      final user = FirebaseAuth.instance.currentUser!;
+      final first = _firstNameCtrl.text.trim();
+      final last = _lastNameCtrl.text.trim();
 
-      await FirebaseFirestore.instance.collection('users').doc(uid).set({
-        'name': '${_firstNameCtrl.text.trim()} ${_lastNameCtrl.text.trim()}',
-        'first_name': _firstNameCtrl.text.trim(),
-        'last_name': _lastNameCtrl.text.trim(),
-        'phone': phone,
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'name': '$first $last',
+        'first_name': first,
+        'last_name': last,
+        'email': user.email ?? '',
+        'phone': '',
         'dob': Timestamp.fromDate(_dob!),
         'blood_group': _selectedBloodGroup ?? '',
         'gender': _selectedGender ?? '',
@@ -77,17 +77,13 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       });
 
       if (!mounted) return;
-
-      // Show welcome message then go home
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
             children: [
               const Icon(Icons.check_circle, color: Colors.white, size: 20),
               const SizedBox(width: 10),
-              Text(
-                'Welcome to Medi Locker, ${_firstNameCtrl.text.trim()}! 🎉',
-              ),
+              Text('Welcome to Medi Locker, $first!'),
             ],
           ),
           backgroundColor: AppColors.success,
@@ -96,10 +92,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
-
-      await Future.delayed(const Duration(seconds: 1));
+      await Future.delayed(const Duration(milliseconds: 800));
       if (mounted) context.go('/home');
-    } catch (e) {
+    } catch (_) {
       setState(() => _isLoading = false);
       _showError('Failed to save profile. Please try again.');
     }
@@ -130,7 +125,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 16),
-                // Header
                 Center(
                   child: Column(
                     children: [
@@ -141,32 +135,25 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                           color: AppColors.primaryContainer,
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const Icon(Icons.person_outline,
-                            size: 36, color: AppColors.primary),
+                        child: const Icon(Icons.person_outline, size: 36, color: AppColors.primary),
                       ),
                       const SizedBox(height: 16),
-                      Text('Set up your profile',
-                          style: Theme.of(context).textTheme.headlineSmall),
+                      Text('Set up your profile', style: Theme.of(context).textTheme.headlineSmall),
                       const SizedBox(height: 6),
                       Text(
-                        'This helps Cura give you personalised health advice',
+                        'Helps Cura give you personalised advice',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 13,
-                          color: isDark
-                              ? AppColors.textSecondaryDark
-                              : AppColors.textSecondaryLight,
+                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                         ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 32),
-
-                _SectionLabel(label: 'Basic Information'),
+                const _SectionLabel(label: 'Basic Information'),
                 const SizedBox(height: 12),
-
-                // First name
                 TextFormField(
                   controller: _firstNameCtrl,
                   textCapitalization: TextCapitalization.words,
@@ -174,12 +161,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     labelText: 'First name',
                     prefixIcon: Icon(Icons.badge_outlined),
                   ),
-                  validator: (v) =>
-                      v == null || v.trim().isEmpty ? 'Required' : null,
+                  validator: (v) => v?.trim().isEmpty == true ? 'Required' : null,
                 ),
                 const SizedBox(height: 12),
-
-                // Last name
                 TextFormField(
                   controller: _lastNameCtrl,
                   textCapitalization: TextCapitalization.words,
@@ -187,117 +171,82 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     labelText: 'Last name',
                     prefixIcon: Icon(Icons.badge_outlined),
                   ),
-                  validator: (v) =>
-                      v == null || v.trim().isEmpty ? 'Required' : null,
+                  validator: (v) => v?.trim().isEmpty == true ? 'Required' : null,
                 ),
                 const SizedBox(height: 12),
-
-                // Date of birth
                 GestureDetector(
                   onTap: _pickDob,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                     decoration: BoxDecoration(
-                      color: isDark
-                          ? AppColors.surfaceDark
-                          : AppColors.surfaceLight,
+                      color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: isDark
-                            ? AppColors.borderDark
-                            : AppColors.borderLight,
+                        color: isDark ? AppColors.borderDark : AppColors.borderLight,
                       ),
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.calendar_today_outlined,
-                            size: 20,
-                            color: isDark
-                                ? AppColors.textSecondaryDark
-                                : AppColors.textSecondaryLight),
+                        Icon(Icons.calendar_today_outlined, size: 20, color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
                         const SizedBox(width: 12),
                         Text(
-                          _dob == null
-                              ? 'Date of birth'
-                              : '${_dob!.day}/${_dob!.month}/${_dob!.year}',
+                          _dob == null ? 'Date of birth' : '${_dob!.day}/${_dob!.month}/${_dob!.year}',
                           style: TextStyle(
                             fontSize: 14,
                             color: _dob == null
-                                ? (isDark
-                                    ? AppColors.textHintDark
-                                    : AppColors.textHintLight)
-                                : (isDark
-                                    ? AppColors.textPrimaryDark
-                                    : AppColors.textPrimaryLight),
+                                ? (isDark ? AppColors.textHintDark : AppColors.textHintLight)
+                                : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
                           ),
                         ),
                         const Spacer(),
-                        Icon(Icons.arrow_drop_down,
-                            color: isDark
-                                ? AppColors.textSecondaryDark
-                                : AppColors.textSecondaryLight),
+                        Icon(Icons.arrow_drop_down, color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
                       ],
                     ),
                   ),
                 ),
                 const SizedBox(height: 12),
-
-                // Gender
                 DropdownButtonFormField<String>(
-                  value: _selectedGender,
+                  initialValue: _selectedGender,
                   decoration: const InputDecoration(
                     labelText: 'Gender',
                     prefixIcon: Icon(Icons.wc_outlined),
                   ),
-                  items: _genders
-                      .map((g) => DropdownMenuItem(value: g, child: Text(g)))
-                      .toList(),
+                  items: _genders.map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
                   onChanged: (v) => setState(() => _selectedGender = v),
                 ),
                 const SizedBox(height: 24),
-
-                _SectionLabel(label: 'Health Information'),
+                const _SectionLabel(label: 'Health Information'),
                 const SizedBox(height: 12),
-
-                // Blood group
                 DropdownButtonFormField<String>(
-                  value: _selectedBloodGroup,
+                  initialValue: _selectedBloodGroup,
                   decoration: const InputDecoration(
                     labelText: 'Blood group (optional)',
                     prefixIcon: Icon(Icons.bloodtype_outlined),
                   ),
-                  items: _bloodGroups
-                      .map((b) => DropdownMenuItem(value: b, child: Text(b)))
-                      .toList(),
+                  items: _bloodGroups.map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
                   onChanged: (v) => setState(() => _selectedBloodGroup = v),
                 ),
-                const SizedBox(height: 8),
-
+                const SizedBox(height: 10),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: AppColors.infoContainer,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Row(
+                  child: const Row(
                     children: [
-                      const Icon(Icons.info_outline,
-                          color: AppColors.info, size: 18),
-                      const SizedBox(width: 10),
+                      Icon(Icons.info_outline, color: AppColors.info, size: 16),
+                      SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           'You can add allergies and conditions in your profile later.',
-                          style: TextStyle(
-                              fontSize: 12, color: AppColors.info),
+                          style: TextStyle(fontSize: 12, color: AppColors.info),
                         ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 32),
-
-                // Save button
                 SizedBox(
                   width: double.infinity,
                   height: 52,
@@ -307,10 +256,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                         ? const SizedBox(
                             width: 22,
                             height: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
                         : const Text('Complete Setup'),
                   ),
