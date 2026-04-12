@@ -1,4 +1,3 @@
-```md
 # 🛡️ Medi Locker
 
 ![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white)
@@ -97,12 +96,12 @@ Alongside that, **Cura** provides AI-assisted health guidance for general questi
 
 ## 📱 App Flow
 
-```text
+
 Splash → Onboarding → Login / Register → Profile Setup → Home
 
 Bottom Navigation:
 Home | Cura | Records | Profile
-```
+
 
 ## 🧭 Architecture Overview
 
@@ -194,10 +193,10 @@ Built by **Yash Saini**
 ## 📌 Project Status
 
 Medi Locker is an actively evolving product focused on secure health record management and AI-assisted guidance, with core mobile workflows already implemented and release-ready Android builds available through GitHub Releases.
-```
+
 
 For the GitHub **About** section, use this:
 
-```text
+
 A modern Flutter health vault for secure medical records, AI-assisted guidance through Cura, and privacy-first user control.
-```
+
