@@ -1,10 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../providers/user_provider.dart';
 import '../../../update/models/app_update_info.dart';
 import '../../../update/providers/app_update_provider.dart';
 import '../../models/user_model.dart';
@@ -268,6 +270,16 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                     onTap: null,
                   ),
+                  _ActionRow(
+                    icon: Icons.download_outlined,
+                    label: 'Export My Data',
+                    onTap: () => _exportData(context, ref),
+                  ),
+                  _ActionRow(
+                    icon: Icons.delete_forever_outlined,
+                    label: 'Delete Account',
+                    onTap: () => _confirmDeleteAccount(context, ref),
+                  ),
                 ],
               ),
               const SizedBox(height: 14),
@@ -389,6 +401,80 @@ class ProfileScreen extends ConsumerWidget {
       ),
       builder: (_) => _EditProfileSheet(uid: uid),
     );
+  }
+
+  Future<void> _exportData(BuildContext context, WidgetRef ref) async {
+    try {
+      final path = await ref.read(userRepositoryProvider).exportAccountData();
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Export saved to: $path'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to export your data. Please try again.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  void _confirmDeleteAccount(BuildContext context, WidgetRef ref) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Account'),
+        content: const Text(
+          'This will permanently delete your profile, chats, records metadata, uploaded files, and sign-in account. This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              await _deleteAccount(context, ref);
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.error,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteAccount(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(userRepositoryProvider).deleteAccount();
+    } on auth.FirebaseAuthException catch (error) {
+      if (!context.mounted) return;
+      final message = error.code == 'requires-recent-login'
+          ? 'For security, please sign out and sign in again before deleting your account.'
+          : 'Failed to delete account: ${error.message ?? error.code}';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to delete account. Please try again.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 }
 
