@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -44,22 +45,41 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _navigate() async {
     await Future.delayed(const Duration(milliseconds: 2200));
     if (!mounted) return;
+
     try {
       final prefs = await SharedPreferences.getInstance();
       if (!mounted) return;
       final hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
       final user = FirebaseAuth.instance.currentUser;
 
-      if (user != null) {
+      if (user == null) {
+        if (!hasSeenOnboarding) {
+          context.go('/onboarding');
+        } else {
+          context.go('/login');
+        }
+        return;
+      }
+
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      if (!mounted) return;
+
+      final isComplete =
+          doc.exists && (doc.data()?['is_profile_complete'] ?? false);
+
+      if (isComplete) {
         context.go('/home');
-      } else if (!hasSeenOnboarding) {
-        context.go('/onboarding');
       } else {
-        context.go('/login');
+        context.go('/profile-setup');
       }
     } catch (_) {
-      if (!mounted) return;
-      context.go('/login');
+      if (mounted) {
+        context.go('/login');
+      }
     }
   }
 
@@ -104,55 +124,57 @@ class _SplashScreenState extends State<SplashScreen>
               Center(
                 child: AnimatedBuilder(
                   animation: _controller,
-                  builder: (_, __) => FadeTransition(
-                    opacity: _fadeAnim,
-                    child: ScaleTransition(
-                      scale: _scaleAnim,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(28),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.2),
-                                  blurRadius: 30,
-                                  offset: const Offset(0, 10),
-                                ),
-                              ],
+                  builder: (_, __) {
+                    return FadeTransition(
+                      opacity: _fadeAnim,
+                      child: ScaleTransition(
+                        scale: _scaleAnim,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 100,
+                              height: 100,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(28),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.2),
+                                    blurRadius: 30,
+                                    offset: const Offset(0, 10),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.health_and_safety,
+                                size: 56,
+                                color: AppColors.primary,
+                              ),
                             ),
-                            child: const Icon(
-                              Icons.health_and_safety,
-                              size: 56,
-                              color: AppColors.primary,
+                            const SizedBox(height: 24),
+                            const Text(
+                              'Medi Locker',
+                              style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                letterSpacing: 0.5,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 24),
-                          const Text(
-                            'Medi Locker',
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              letterSpacing: 0.5,
+                            const SizedBox(height: 8),
+                            Text(
+                              'Your secure health vault',
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: Colors.white.withValues(alpha: 0.8),
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Your secure health vault',
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: Colors.white.withValues(alpha: 0.8),
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ),
               Positioned(

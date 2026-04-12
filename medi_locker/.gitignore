@@ -43,3 +43,19 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Cloud Functions dependencies and local config
+functions/node_modules/
+functions/.runtimeconfig.json
+
+# Android signing files and local config
+android/key.properties
+*.jks
+*.keystore
+android/local.properties
+
+# Local encrypted temp files
+*.enc
+
+# Local Firebase config
+.firebaserc.local

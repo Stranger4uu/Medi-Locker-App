@@ -44,7 +44,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         child: child!,
       ),
     );
-    if (picked != null) setState(() => _dob = picked);
+    if (picked != null) {
+      setState(() => _dob = picked);
+    }
   }
 
   Future<void> _saveProfile() async {
@@ -55,8 +57,18 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     }
 
     setState(() => _isLoading = true);
+
     try {
-      final user = FirebaseAuth.instance.currentUser!;
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        _showError('Session expired. Please log in again.');
+        setState(() => _isLoading = false);
+        if (mounted) {
+          context.go('/login');
+        }
+        return;
+      }
+
       final first = _firstNameCtrl.text.trim();
       final last = _lastNameCtrl.text.trim();
 
@@ -69,44 +81,66 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         'dob': Timestamp.fromDate(_dob!),
         'blood_group': _selectedBloodGroup ?? '',
         'gender': _selectedGender ?? '',
-        'allergies': [],
-        'chronic_conditions': [],
+        'allergies': <String>[],
+        'chronic_conditions': <String>[],
         'is_profile_complete': true,
         'created_at': FieldValue.serverTimestamp(),
         'updated_at': FieldValue.serverTimestamp(),
       });
 
+      final verify = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
       if (!mounted) return;
+
+      if (!verify.exists) {
+        _showError('Failed to save profile. Please try again.');
+        setState(() => _isLoading = false);
+        return;
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
             children: [
               const Icon(Icons.check_circle, color: Colors.white, size: 20),
               const SizedBox(width: 10),
-              Text('Welcome to Medi Locker, $first!'),
+              Expanded(child: Text('Welcome to Medi Locker, $first!')),
             ],
           ),
           backgroundColor: AppColors.success,
           duration: const Duration(seconds: 3),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
-      await Future.delayed(const Duration(milliseconds: 800));
-      if (mounted) context.go('/home');
-    } catch (_) {
-      setState(() => _isLoading = false);
-      _showError('Failed to save profile. Please try again.');
+
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (mounted) {
+        context.go('/home');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _showError('Failed to save profile. Please try again.\n$e');
+      }
     }
   }
 
   void _showError(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
       ),
     );
   }
@@ -135,17 +169,26 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                           color: AppColors.primaryContainer,
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const Icon(Icons.person_outline, size: 36, color: AppColors.primary),
+                        child: const Icon(
+                          Icons.person_outline,
+                          size: 36,
+                          color: AppColors.primary,
+                        ),
                       ),
                       const SizedBox(height: 16),
-                      Text('Set up your profile', style: Theme.of(context).textTheme.headlineSmall),
+                      Text(
+                        'Set up your profile',
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
                       const SizedBox(height: 6),
                       Text(
                         'Helps Cura give you personalised advice',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 13,
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
                         ),
                       ),
                     ],
@@ -161,7 +204,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     labelText: 'First name',
                     prefixIcon: Icon(Icons.badge_outlined),
                   ),
-                  validator: (v) => v?.trim().isEmpty == true ? 'Required' : null,
+                  validator: (value) =>
+                      value?.trim().isEmpty == true ? 'Required' : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -171,35 +215,60 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     labelText: 'Last name',
                     prefixIcon: Icon(Icons.badge_outlined),
                   ),
-                  validator: (v) => v?.trim().isEmpty == true ? 'Required' : null,
+                  validator: (value) =>
+                      value?.trim().isEmpty == true ? 'Required' : null,
                 ),
                 const SizedBox(height: 12),
                 GestureDetector(
                   onTap: _pickDob,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
                     decoration: BoxDecoration(
-                      color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                      color: isDark
+                          ? AppColors.surfaceDark
+                          : AppColors.surfaceLight,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                        color: isDark
+                            ? AppColors.borderDark
+                            : AppColors.borderLight,
                       ),
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.calendar_today_outlined, size: 20, color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                        Icon(
+                          Icons.calendar_today_outlined,
+                          size: 20,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
+                        ),
                         const SizedBox(width: 12),
                         Text(
-                          _dob == null ? 'Date of birth' : '${_dob!.day}/${_dob!.month}/${_dob!.year}',
+                          _dob == null
+                              ? 'Date of birth'
+                              : '${_dob!.day}/${_dob!.month}/${_dob!.year}',
                           style: TextStyle(
                             fontSize: 14,
                             color: _dob == null
-                                ? (isDark ? AppColors.textHintDark : AppColors.textHintLight)
-                                : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
+                                ? (isDark
+                                    ? AppColors.textHintDark
+                                    : AppColors.textHintLight)
+                                : (isDark
+                                    ? AppColors.textPrimaryDark
+                                    : AppColors.textPrimaryLight),
                           ),
                         ),
                         const Spacer(),
-                        Icon(Icons.arrow_drop_down, color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                        Icon(
+                          Icons.arrow_drop_down,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
+                        ),
                       ],
                     ),
                   ),
@@ -211,8 +280,13 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     labelText: 'Gender',
                     prefixIcon: Icon(Icons.wc_outlined),
                   ),
-                  items: _genders.map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
-                  onChanged: (v) => setState(() => _selectedGender = v),
+                  items: _genders
+                      .map((gender) => DropdownMenuItem(
+                            value: gender,
+                            child: Text(gender),
+                          ))
+                      .toList(),
+                  onChanged: (value) => setState(() => _selectedGender = value),
                 ),
                 const SizedBox(height: 24),
                 const _SectionLabel(label: 'Health Information'),
@@ -223,8 +297,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     labelText: 'Blood group (optional)',
                     prefixIcon: Icon(Icons.bloodtype_outlined),
                   ),
-                  items: _bloodGroups.map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
-                  onChanged: (v) => setState(() => _selectedBloodGroup = v),
+                  items: _bloodGroups
+                      .map((bloodGroup) => DropdownMenuItem(
+                            value: bloodGroup,
+                            child: Text(bloodGroup),
+                          ))
+                      .toList(),
+                  onChanged: (value) =>
+                      setState(() => _selectedBloodGroup = value),
                 ),
                 const SizedBox(height: 10),
                 Container(
@@ -240,7 +320,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                       Expanded(
                         child: Text(
                           'You can add allergies and conditions in your profile later.',
-                          style: TextStyle(fontSize: 12, color: AppColors.info),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.info,
+                          ),
                         ),
                       ),
                     ],
@@ -256,7 +339,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                         ? const SizedBox(
                             width: 22,
                             height: 22,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
                           )
                         : const Text('Complete Setup'),
                   ),
@@ -273,6 +359,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
 class _SectionLabel extends StatelessWidget {
   final String label;
+
   const _SectionLabel({required this.label});
 
   @override

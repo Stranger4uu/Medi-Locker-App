@@ -8,6 +8,8 @@ class ReportModel {
   final String fileName;
   final int fileSize;
   final String fileType;
+  final String? originalExt;
+  final bool isEncrypted;
   final String? thumbnailUrl;
   final String? aiSummary;
   final List<String> tags;
@@ -21,6 +23,8 @@ class ReportModel {
     required this.fileName,
     required this.fileSize,
     required this.fileType,
+    this.originalExt,
+    this.isEncrypted = true,
     this.thumbnailUrl,
     this.aiSummary,
     this.tags = const [],
@@ -37,6 +41,8 @@ class ReportModel {
       fileName: d['file_name'] ?? '',
       fileSize: d['file_size'] ?? 0,
       fileType: d['file_type'] ?? 'pdf',
+      originalExt: d['original_ext'],
+      isEncrypted: d['is_encrypted'] ?? false,
       thumbnailUrl: d['thumbnail_url'],
       aiSummary: d['ai_summary'],
       tags: List<String>.from(d['tags'] ?? []),
@@ -46,14 +52,10 @@ class ReportModel {
 
   String get typeLabel {
     switch (type) {
-      case 'lab_report':
-        return 'Lab Report';
-      case 'prescription':
-        return 'Prescription';
-      case 'scan':
-        return 'Scan';
-      default:
-        return 'Document';
+      case 'lab_report': return 'Lab Report';
+      case 'prescription': return 'Prescription';
+      case 'scan': return 'Scan / X-Ray';
+      default: return 'Document';
     }
   }
 

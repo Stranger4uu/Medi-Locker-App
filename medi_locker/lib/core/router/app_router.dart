@@ -25,25 +25,43 @@ class AppRoutes {
   static const profileSetup = '/profile-setup';
   static const notifications = '/notifications';
   static const upload = '/upload';
-  static const reportDetail = '/report/:id';
+}
+
+final _authListenable = _AuthStateListenable();
+
+class _AuthStateListenable extends ChangeNotifier {
+  _AuthStateListenable() {
+    FirebaseAuth.instance.authStateChanges().listen((_) {
+      notifyListeners();
+    });
+  }
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: AppRoutes.splash,
+    refreshListenable: _authListenable,
     debugLogDiagnostics: false,
     redirect: (context, state) {
       final user = FirebaseAuth.instance.currentUser;
-      final loc = state.matchedLocation;
+      final location = state.matchedLocation;
       const publicRoutes = [
         AppRoutes.splash,
         AppRoutes.onboarding,
         AppRoutes.login,
         AppRoutes.register,
+        AppRoutes.profileSetup,
       ];
-      if (user == null && !publicRoutes.contains(loc)) {
+
+      if (user == null && !publicRoutes.contains(location)) {
         return AppRoutes.login;
       }
+
+      if (user != null &&
+          (location == AppRoutes.login || location == AppRoutes.register)) {
+        return '/home';
+      }
+
       return null;
     },
     routes: [
@@ -83,7 +101,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
     ],
-    errorBuilder: (context, state) =>
-        Scaffold(body: Center(child: Text('Page not found: ${state.error}'))),
+    errorBuilder: (context, state) {
+      return Scaffold(
+        body: Center(child: Text('Page not found: ${state.error}')),
+      );
+    },
   );
 });
