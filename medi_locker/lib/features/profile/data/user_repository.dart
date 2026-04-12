@@ -92,7 +92,7 @@ class UserRepository {
           .toList(),
     };
 
-    final downloadsDir = Directory('/storage/emulated/0/Download');
+    final downloadsDir = Directory('/storage/emulated/0/Download/Medi Locker');
     final fallbackDir = await getApplicationDocumentsDirectory();
     final baseDir = await _ensureDirectory(downloadsDir) ?? fallbackDir;
     final file = File('${baseDir.path}/medi_locker_export_${DateTime.now().millisecondsSinceEpoch}.json');
