@@ -10,6 +10,7 @@ import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/cura/presentation/screens/cura_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
+import '../../features/legal/presentation/screens/privacy_policy_screen.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/records/presentation/screens/records_screen.dart';
@@ -25,6 +26,7 @@ class AppRoutes {
   static const profileSetup = '/profile-setup';
   static const notifications = '/notifications';
   static const upload = '/upload';
+  static const privacyPolicy = '/privacy-policy';
 }
 
 final _authListenable = _AuthStateListenable();
@@ -82,6 +84,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.notifications,
         builder: (_, __) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.privacyPolicy,
+        builder: (_, __) => const PrivacyPolicyScreen(),
       ),
       GoRoute(path: AppRoutes.upload, builder: (_, __) => const UploadScreen()),
       GoRoute(

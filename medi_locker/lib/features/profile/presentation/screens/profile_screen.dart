@@ -1,18 +1,22 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
-import '../../../profile/models/user_model.dart';
+import '../../../update/models/app_update_info.dart';
+import '../../../update/providers/app_update_provider.dart';
+import '../../models/user_model.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final appVersion = ref.watch(appVersionProvider).valueOrNull ?? '...';
 
     if (uid == null) {
       return const Scaffold(
@@ -33,7 +37,8 @@ class ProfileScreen extends StatelessWidget {
         ],
       ),
       body: StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
+        stream:
+            FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -242,16 +247,21 @@ class ProfileScreen extends StatelessWidget {
                     onTap: () => context.push('/notifications'),
                   ),
                   _ActionRow(
-                    icon: Icons.description_outlined,
-                    label: 'Terms & Privacy Policy',
-                    onTap: () => _showTerms(context),
+                    icon: Icons.privacy_tip_outlined,
+                    label: 'Privacy Policy',
+                    onTap: () => context.push('/privacy-policy'),
                   ),
-                  const _ActionRow(
+                  _ActionRow(
+                    icon: Icons.system_update_alt_outlined,
+                    label: 'Check for Updates',
+                    onTap: () => _checkForUpdates(context, ref),
+                  ),
+                  _ActionRow(
                     icon: Icons.info_outline,
                     label: 'App Version',
                     trailing: Text(
-                      '1.0.0',
-                      style: TextStyle(
+                      appVersion,
+                      style: const TextStyle(
                         fontSize: 13,
                         color: AppColors.textSecondaryLight,
                       ),
@@ -294,6 +304,25 @@ class ProfileScreen extends StatelessWidget {
     await FirebaseAuth.instance.signOut();
   }
 
+  Future<void> _checkForUpdates(BuildContext context, WidgetRef ref) async {
+    final update = await ref
+        .read(appUpdateRepositoryProvider)
+        .checkForUpdate(includeDismissed: true);
+    if (!context.mounted) return;
+
+    if (update == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You are already on the latest version.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    await _showUpdateDialog(context, ref, update);
+  }
+
   void _confirmLogout(BuildContext context) {
     showDialog(
       context: context,
@@ -320,41 +349,33 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  void _showTerms(BuildContext context) {
-    showModalBottomSheet(
+  Future<void> _showUpdateDialog(
+    BuildContext context,
+    WidgetRef ref,
+    AppUpdateInfo update,
+  ) async {
+    await showDialog<void>(
       context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.75,
-        builder: (_, ctrl) => Padding(
-          padding: const EdgeInsets.all(24),
-          child: ListView(
-            controller: ctrl,
-            children: const [
-              Text(
-                'Terms & Privacy Policy',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 16),
-              Text(
-                'Medical Disclaimer\n\n'
-                'Cura AI is not a substitute for professional medical advice, diagnosis, or treatment. '
-                'Always seek advice from a qualified healthcare provider.\n\n'
-                'Data Privacy\n\n'
-                'Your health data is stored securely in Firebase and is only accessible by you.\n\n'
-                'Data Security\n\n'
-                'All uploaded files are AES-256 encrypted before storage.\n\n'
-                'Third-Party Services\n\n'
-                'This app uses Google Firebase and Google Gemini AI services.',
-                style: TextStyle(fontSize: 14, height: 1.7),
-              ),
-            ],
-          ),
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Update Available'),
+        content: Text(
+          'Version ${update.latestVersion} is available.\n\nOpen the download page now?',
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              await ref.read(appUpdateRepositoryProvider).openDownload(update);
+              if (dialogContext.mounted) {
+                Navigator.pop(dialogContext);
+              }
+            },
+            child: const Text('Open'),
+          ),
+        ],
       ),
     );
   }
