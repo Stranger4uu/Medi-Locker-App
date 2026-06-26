@@ -192,7 +192,7 @@ Built by **Yash Saini**
 
 ## 📌 Project Status
 
-Medi Locker is an actively evolving product focused on secure health record management and AI-assisted guidance, with core mobile workflows already implemented and release-ready Android builds available through GitHub Releases.
+Medi Locker is an actively evolving product focused on secure health record management and AI-assisted guidance, with core mobile workflows already implemented and release ready Android builds available through GitHub Releases.
 
 
 For the GitHub **About** section, use this:
